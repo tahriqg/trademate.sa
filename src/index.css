@@ -1,0 +1,75 @@
+:root {
+  --navy: #0b1f3a;
+  --navy-2: #14305a;
+  --green: #2fb67c;
+  --bg: #f4f6fa;
+  --card: #ffffff;
+  --text: #1a2433;
+  --muted: #667085;
+  --border: #e4e8ef;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+a { color: inherit; text-decoration: none; }
+
+/* Mobile first: content on top, nav fixed to the bottom */
+.app { min-height: 100vh; }
+.content { padding: 20px 16px 96px; max-width: 960px; margin: 0 auto; }
+.nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  background: var(--navy); padding: 6px 4px;
+}
+.brand { display: none; }
+.nav-links { display: flex; justify-content: space-around; }
+.nav-link {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: #b8c4d9; font-size: 0.72rem; padding: 6px 8px; border-radius: 10px; min-width: 56px;
+}
+.nav-icon { font-size: 1.3rem; }
+.nav-link.active { color: #fff; background: var(--navy-2); box-shadow: inset 0 -3px 0 var(--green); }
+
+.page-title { margin: 4px 0 16px; font-size: 1.6rem; color: var(--navy); }
+.section-title { margin: 28px 0 12px; font-size: 1.05rem; color: var(--navy); }
+.muted { color: var(--muted); margin: 0; }
+
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+  box-shadow: 0 1px 3px rgba(11, 31, 58, 0.06);
+}
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { text-align: center; padding: 14px 8px; }
+.stat-value { font-size: 1.8rem; font-weight: 700; color: var(--navy); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  display: inline-block; padding: 12px 18px; border-radius: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  font-weight: 600; color: var(--navy);
+}
+.btn-primary { background: var(--green); border-color: var(--green); color: #fff; }
+
+.empty { text-align: center; color: var(--muted); padding: 32px 16px; }
+.badge {
+  display: inline-block; margin-top: 8px; padding: 4px 12px; border-radius: 999px;
+  background: #e6f6ee; color: #1b7a52; font-size: 0.8rem; font-weight: 600;
+}
+
+/* Tablets and computers: nav becomes a left sidebar */
+@media (min-width: 768px) {
+  .app { display: flex; }
+  .nav {
+    position: sticky; top: 0; height: 100vh; width: 230px; padding: 24px 14px; flex-shrink: 0;
+  }
+  .brand { display: block; color: #fff; font-size: 1.4rem; font-weight: 700; margin: 0 8px 28px; }
+  .brand span { color: var(--green); }
+  .nav-links { flex-direction: column; justify-content: flex-start; gap: 4px; }
+  .nav-link { flex-direction: row; gap: 12px; font-size: 1rem; padding: 12px 14px; }
+  .nav-link.active { box-shadow: inset 3px 0 0 var(--green); }
+  .content { flex: 1; padding: 32px; }
+}
