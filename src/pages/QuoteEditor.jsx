@@ -10,8 +10,10 @@ import {
   formatZAR,
 } from '../lib/money.js'
 import { STATUS_LABELS } from './Quotations.jsx'
+import { buildQuotePdf, downloadBlob } from '../lib/quotePdf.js'
 import '../customers.css'
 import '../quotes.css'
+import '../settings.css'
 
 const DEFAULT_TERMS =
   'A 50% deposit is required before work starts. The balance is due on completion. This quotation is valid until the expiry date shown.'
@@ -29,6 +31,9 @@ const blankItem = () => ({
   unitPrice: '',
 })
 const clean = (v) => (v.trim() === '' ? null : v.trim())
+// A text fingerprint of what is on screen, used to spot unsaved changes.
+const snapshotOf = (form, items) =>
+  JSON.stringify({ form, items: items.map((it) => [it.kind, it.description, it.quantity, it.unitPrice]) })
 
 export default function QuoteEditor() {
   const { id } = useParams() // undefined when creating a new quotation
@@ -61,6 +66,10 @@ export default function QuoteEditor() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [showErrors, setShowErrors] = useState(false)
+  const [savedSnapshot, setSavedSnapshot] = useState('')
+  const [justSaved, setJustSaved] = useState(false)
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const [pdfMessage, setPdfMessage] = useState('')
 
   // quick "new customer" mini form
   const [newCust, setNewCust] = useState(null)
@@ -101,8 +110,7 @@ export default function QuoteEditor() {
           return
         }
         const d = q.data
-        setQuoteNumber(d.quote_number)
-        setForm({
+        const formObj = {
           customerId: d.customer_id ?? '',
           title: d.title,
           status: d.status,
@@ -115,20 +123,23 @@ export default function QuoteEditor() {
           discount: d.discount_cents ? centsToInput(d.discount_cents) : '',
           notes: d.notes ?? '',
           terms: d.terms ?? '',
-        })
+        }
         const rows = it.data ?? []
+        const itemsObj = rows.length
+          ? rows.map((r) => ({
+              key: r.id,
+              kind: r.kind,
+              description: r.description,
+              quantity: String(Number(r.quantity)),
+              unitPrice: centsToInput(r.unit_price_cents),
+            }))
+          : [blankItem()]
+        setQuoteNumber(d.quote_number)
         setOldItemIds(rows.map((r) => r.id))
-        setItems(
-          rows.length
-            ? rows.map((r) => ({
-                key: r.id,
-                kind: r.kind,
-                description: r.description,
-                quantity: String(Number(r.quantity)),
-                unitPrice: centsToInput(r.unit_price_cents),
-              }))
-            : [blankItem()],
-        )
+        setForm(formObj)
+        setItems(itemsObj)
+        setSavedSnapshot(snapshotOf(formObj, itemsObj))
+        setJustSaved(false)
       }
       setLoading(false)
     }
@@ -224,6 +235,7 @@ export default function QuoteEditor() {
     e.preventDefault()
     setShowErrors(true)
     setSaveError('')
+    setJustSaved(false)
     if (calc.problems.length > 0) return
 
     setSaving(true)
@@ -271,7 +283,8 @@ export default function QuoteEditor() {
           await supabase.from('quotations').delete().eq('id', created.data.id) // don't leave an empty quote behind
           throw added.error
         }
-        navigate('/quotations')
+        setSaving(false)
+        navigate(`/quotations/${created.data.id}`, { replace: true })
       } else {
         // Safe order: add the new items first, then update the quotation, then remove the old items.
         // If any step fails, nothing the customer already had is lost.
@@ -287,12 +300,49 @@ export default function QuoteEditor() {
           const removed = await supabase.from('quotation_items').delete().in('id', oldItemIds)
           if (removed.error) throw removed.error
         }
-        navigate('/quotations')
+        setOldItemIds(newIds)
+        setSavedSnapshot(snapshotOf(form, items))
+        setJustSaved(true)
+        setSaving(false)
       }
     } catch (err) {
       setSaveError(err.message || 'Something went wrong while saving.')
       setSaving(false)
     }
+  }
+
+  // mode is 'download' or 'share'
+  async function makePdf(mode) {
+    setPdfBusy(true)
+    setPdfMessage('')
+    try {
+      const { blob, filename } = await buildQuotePdf(id)
+      if (mode === 'download') {
+        downloadBlob(blob, filename)
+      } else {
+        const file = new File([blob], filename, { type: 'application/pdf' })
+        let shared = false
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `Quotation ${quoteNumber}`,
+              text: `Quotation ${quoteNumber} from ${business.name}`,
+            })
+            shared = true
+          } catch (err) {
+            if (err.name === 'AbortError') shared = true // the person closed the share menu: that's fine
+          }
+        }
+        if (!shared) {
+          downloadBlob(blob, filename)
+          setPdfMessage('Sharing is not available here, so the PDF was downloaded instead.')
+        }
+      }
+    } catch (err) {
+      setPdfMessage(`Could not create the PDF: ${err.message}`)
+    }
+    setPdfBusy(false)
   }
 
   async function handleDelete() {
@@ -313,6 +363,7 @@ export default function QuoteEditor() {
   }
 
   const t = calc.totals
+  const dirty = !isNew && savedSnapshot !== '' && snapshotOf(form, items) !== savedSnapshot
 
   return (
     <div>
@@ -530,6 +581,38 @@ export default function QuoteEditor() {
           </label>
         </div>
 
+        <div className="card">
+          <h2>PDF quotation</h2>
+          {isNew ? (
+            <p className="muted">Save the quotation first, then you can download or share its PDF.</p>
+          ) : (
+            <>
+              {dirty && (
+                <p className="muted">You have unsaved changes. Save them first so the PDF matches.</p>
+              )}
+              <div className="pdf-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={dirty || pdfBusy || saving}
+                  onClick={() => makePdf('download')}
+                >
+                  {pdfBusy ? 'Preparing…' : 'Download PDF'}
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={dirty || pdfBusy || saving}
+                  onClick={() => makePdf('share')}
+                >
+                  Share (WhatsApp, email…)
+                </button>
+              </div>
+              {pdfMessage && <div className="alert alert-error" style={{ marginTop: 12 }}>{pdfMessage}</div>}
+            </>
+          )}
+        </div>
+
         {showErrors && calc.problems.length > 0 && (
           <div className="alert alert-error">
             Please fix these before saving:
@@ -539,6 +622,7 @@ export default function QuoteEditor() {
           </div>
         )}
         {saveError && <div className="alert alert-error">{saveError}</div>}
+        {justSaved && !dirty && <div className="alert alert-ok">Quotation saved.</div>}
 
         <div className="save-bar">
           <button className="btn btn-primary" disabled={saving}>
