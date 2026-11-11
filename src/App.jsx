@@ -6,6 +6,7 @@ import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Customers from './pages/Customers.jsx'
 import Quotations from './pages/Quotations.jsx'
+import QuoteEditor from './pages/QuoteEditor.jsx'
 import Jobs from './pages/Jobs.jsx'
 import Settings from './pages/Settings.jsx'
 import SecurityTest from './pages/SecurityTest.jsx'
@@ -25,6 +26,8 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/quotations" element={<Quotations />} />
+          <Route path="/quotations/new" element={<QuoteEditor />} />
+          <Route path="/quotations/:id" element={<QuoteEditor />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/settings" element={<Settings />} />
           {/* Temporary developer page. Remove before launch. */}

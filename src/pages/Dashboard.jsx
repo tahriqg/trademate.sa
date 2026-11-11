@@ -55,7 +55,7 @@ export default function Dashboard() {
 
       <h2 className="section-title">Quick actions</h2>
       <div className="actions">
-        <Link to="/quotations" className="btn btn-primary">+ New quotation</Link>
+        <Link to="/quotations/new" className="btn btn-primary">+ New quotation</Link>
         <Link to="/customers" className="btn">+ Add customer</Link>
         <Link to="/jobs" className="btn">View jobs</Link>
       </div>
