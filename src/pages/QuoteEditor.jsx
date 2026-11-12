@@ -9,7 +9,7 @@ import {
   calcTotals,
   formatZAR,
 } from '../lib/money.js'
-import { STATUS_LABELS } from './Quotations.jsx'
+import { STATUS_LABELS } from '../lib/quoteStatus.js'
 import { buildQuotePdf, downloadBlob } from '../lib/quotePdf.js'
 import '../customers.css'
 import '../quotes.css'

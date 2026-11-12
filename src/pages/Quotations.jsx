@@ -2,16 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatZAR } from '../lib/money.js'
+import { STATUS_LABELS } from '../lib/quoteStatus.js'
 import '../customers.css'
 import '../quotes.css'
 
-export const STATUS_LABELS = {
-  draft: 'Draft',
-  sent: 'Sent',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-  expired: 'Expired',
-}
 
 async function loadList() {
   const [quotes, customers] = await Promise.all([

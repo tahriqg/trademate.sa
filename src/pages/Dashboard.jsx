@@ -1,26 +1,49 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
+import '../dashboard.css'
+
+const newest = { ascending: false }
 
 async function loadDashboard() {
   const count = { count: 'exact', head: true }
-  const [biz, customers, quotations, jobs] = await Promise.all([
+  const [biz, customers, quotations, jobs, recentQ, recentC, recentJ] = await Promise.all([
     supabase.from('businesses').select('name').maybeSingle(),
     supabase.from('customers').select('*', count),
     supabase.from('quotations').select('*', count),
     supabase.from('jobs').select('*', count).in('status', ['not_started', 'in_progress']),
+    supabase.from('quotations').select('id, quote_number, title, created_at').order('created_at', newest).limit(5),
+    supabase.from('customers').select('id, name, created_at').order('created_at', newest).limit(5),
+    supabase.from('jobs').select('id, title, created_at').order('created_at', newest).limit(5),
   ])
+
+  const activity = [
+    ...(recentQ.data ?? []).map((q) => ({
+      key: `q${q.id}`, icon: '📄', text: `Quotation ${q.quote_number}: ${q.title}`, to: `/quotations/${q.id}`, date: q.created_at,
+    })),
+    ...(recentC.data ?? []).map((c) => ({
+      key: `c${c.id}`, icon: '👥', text: `Customer added: ${c.name}`, to: '/customers', date: c.created_at,
+    })),
+    ...(recentJ.data ?? []).map((j) => ({
+      key: `j${j.id}`, icon: '🔧', text: `Job started: ${j.title}`, to: `/jobs/${j.id}`, date: j.created_at,
+    })),
+  ]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 6)
+
+  const failed = [biz, customers, quotations, jobs, recentQ, recentC, recentJ].find((r) => r.error)
   return {
     businessName: biz.data?.name ?? 'Your Business',
     customers: customers.count ?? 0,
     quotations: quotations.count ?? 0,
     jobs: jobs.count ?? 0,
-    error: biz.error?.message || customers.error?.message || quotations.error?.message || jobs.error?.message || '',
+    activity,
+    error: failed?.error.message ?? '',
   }
 }
 
 export default function Dashboard() {
-  const [data, setData] = useState({ businessName: '…', customers: 0, quotations: 0, jobs: 0, error: '' })
+  const [data, setData] = useState({ businessName: '…', customers: 0, quotations: 0, jobs: 0, activity: [], error: '' })
 
   useEffect(() => {
     let active = true
@@ -61,9 +84,21 @@ export default function Dashboard() {
       </div>
 
       <h2 className="section-title">Recent activity</h2>
-      <div className="card empty">
-        <p>No activity yet. Add your first customer or quotation to get started.</p>
-      </div>
+      {data.activity.length === 0 ? (
+        <div className="card empty">
+          <p>No activity yet. Add your first customer or quotation to get started.</p>
+        </div>
+      ) : (
+        <div className="card activity-list">
+          {data.activity.map((a) => (
+            <Link to={a.to} className="activity-item" key={a.key}>
+              <span className="activity-icon">{a.icon}</span>
+              <span className="activity-text">{a.text}</span>
+              <span className="activity-date">{new Date(a.date).toLocaleDateString('en-GB')}</span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -3,6 +3,7 @@ import AuthProvider from './context/AuthProvider.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import Layout from './components/Layout.jsx'
 import Login from './pages/Login.jsx'
+import ResetPassword from './pages/ResetPassword.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Customers from './pages/Customers.jsx'
 import Quotations from './pages/Quotations.jsx'
@@ -10,13 +11,13 @@ import QuoteEditor from './pages/QuoteEditor.jsx'
 import Jobs from './pages/Jobs.jsx'
 import JobDetail from './pages/JobDetail.jsx'
 import Settings from './pages/Settings.jsx'
-import SecurityTest from './pages/SecurityTest.jsx'
 
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           element={
             <RequireAuth>
@@ -32,8 +33,6 @@ export default function App() {
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/settings" element={<Settings />} />
-          {/* Temporary developer page. Remove before launch. */}
-          <Route path="/security-test" element={<SecurityTest />} />
         </Route>
       </Routes>
     </AuthProvider>

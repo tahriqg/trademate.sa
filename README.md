@@ -34,7 +34,7 @@ A mobile-friendly business app for South African tradespeople: customers, profes
 
 The whole database (tables, security rules, quote numbering) is in `supabase/migrations/001_initial_schema.sql`. To rebuild it: open the Supabase SQL Editor and run that file. `supabase/reset.sql` deletes everything first (careful: it erases all data).
 
-Security: every table uses Row Level Security, so each business only ever sees its own customers, quotations and jobs. Test this again after any database change using the temporary page at `/security-test` with two accounts. Remove that page before launch.
+Security: every table uses Row Level Security, so each business only ever sees its own customers, quotations and jobs. After any database change, log in as two different test accounts and confirm each one only sees its own customers, quotations and jobs.
 
 Money is stored as whole cents. Prices are entered excluding VAT, the discount comes off before VAT, and VAT is optional per quotation (off by default).
 
@@ -50,7 +50,7 @@ Money is stored as whole cents. Prices are entered excluding VAT, the discount c
 1. Push the code to GitHub (the `.env.local` file must never be uploaded; it is already ignored).
 2. In Vercel, import the GitHub repository. Framework: Vite.
 3. Add the two environment variables above in Vercel before deploying.
-4. After deploying, add the live address to Supabase under Authentication, URL Configuration.
+4. After deploying, add the live address to Supabase under Authentication, URL Configuration. Add it as the Site URL and also add `https://your-address/**` under Redirect URLs (needed for password reset links).
 5. Every push to GitHub redeploys automatically.
 
 ## Keeping it safe

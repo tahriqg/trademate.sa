@@ -1,0 +1,9 @@
+.activity-list { padding: 4px 16px; }
+.activity-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 0;
+  border-bottom: 1px solid var(--border); color: var(--text);
+}
+.activity-item:last-child { border-bottom: 0; }
+.activity-icon { font-size: 1.3rem; }
+.activity-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.activity-date { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }

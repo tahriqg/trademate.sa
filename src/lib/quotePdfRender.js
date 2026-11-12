@@ -51,10 +51,7 @@ export async function renderQuotePdf({ business, customer, quotation, items }) {
           line = attempt
           continue
         }
-        if (line) {
-          out.push(line)
-          line = ''
-        }
+        if (line) out.push(line)
         let chunk = '' // a single very long word: break it by letters
         for (const ch of word) {
           if (chunk && font.widthOfTextAtSize(chunk + ch, size) > maxW) {
