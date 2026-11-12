@@ -70,6 +70,9 @@ export default function QuoteEditor() {
   const [justSaved, setJustSaved] = useState(false)
   const [pdfBusy, setPdfBusy] = useState(false)
   const [pdfMessage, setPdfMessage] = useState('')
+  const [jobId, setJobId] = useState(null)
+  const [jobBusy, setJobBusy] = useState(false)
+  const [jobError, setJobError] = useState('')
 
   // quick "new customer" mini form
   const [newCust, setNewCust] = useState(null)
@@ -99,9 +102,10 @@ export default function QuoteEditor() {
           terms: biz.data.default_terms || DEFAULT_TERMS,
         }))
       } else {
-        const [q, it] = await Promise.all([
+        const [q, it, jb] = await Promise.all([
           supabase.from('quotations').select('*').eq('id', id).maybeSingle(),
           supabase.from('quotation_items').select('*').eq('quotation_id', id).order('sort_order'),
+          supabase.from('jobs').select('id').eq('quotation_id', id).maybeSingle(),
         ])
         if (!active) return
         if (q.error || it.error || !q.data) {
@@ -140,6 +144,7 @@ export default function QuoteEditor() {
         setItems(itemsObj)
         setSavedSnapshot(snapshotOf(formObj, itemsObj))
         setJustSaved(false)
+        setJobId(jb.data?.id ?? null)
       }
       setLoading(false)
     }
@@ -343,6 +348,38 @@ export default function QuoteEditor() {
       setPdfMessage(`Could not create the PDF: ${err.message}`)
     }
     setPdfBusy(false)
+  }
+
+  async function convertToJob() {
+    setJobBusy(true)
+    setJobError('')
+    const existing = await supabase.from('jobs').select('id').eq('quotation_id', id).maybeSingle()
+    if (existing.error) {
+      setJobError(existing.error.message)
+      setJobBusy(false)
+      return
+    }
+    if (existing.data) {
+      navigate(`/jobs/${existing.data.id}`)
+      return
+    }
+    const { data, error } = await supabase
+      .from('jobs')
+      .insert({
+        business_id: business.id,
+        customer_id: form.customerId || null,
+        quotation_id: id,
+        title: form.title.trim(),
+        status: 'not_started',
+      })
+      .select('id')
+      .single()
+    if (error) {
+      setJobError(error.message)
+      setJobBusy(false)
+      return
+    }
+    navigate(`/jobs/${data.id}`)
   }
 
   async function handleDelete() {
@@ -580,6 +617,25 @@ export default function QuoteEditor() {
             <textarea value={form.terms} onChange={(e) => setField('terms', e.target.value)} />
           </label>
         </div>
+
+        {!isNew && form.status === 'accepted' && (
+          <div className="card">
+            <h2>Job</h2>
+            {jobId ? (
+              <Link to={`/jobs/${jobId}`} className="btn btn-primary">View job</Link>
+            ) : dirty ? (
+              <p className="muted">Save your changes first, then you can convert this accepted quotation into a job.</p>
+            ) : (
+              <>
+                <p className="muted">This quotation is accepted. Turn it into a job to start tracking the work.</p>
+                <button type="button" className="btn btn-primary" onClick={convertToJob} disabled={jobBusy || saving}>
+                  {jobBusy ? 'Creating job…' : 'Convert to job'}
+                </button>
+              </>
+            )}
+            {jobError && <div className="alert alert-error" style={{ marginTop: 12 }}>{jobError}</div>}
+          </div>
+        )}
 
         <div className="card">
           <h2>PDF quotation</h2>

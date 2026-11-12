@@ -8,6 +8,7 @@ import Customers from './pages/Customers.jsx'
 import Quotations from './pages/Quotations.jsx'
 import QuoteEditor from './pages/QuoteEditor.jsx'
 import Jobs from './pages/Jobs.jsx'
+import JobDetail from './pages/JobDetail.jsx'
 import Settings from './pages/Settings.jsx'
 import SecurityTest from './pages/SecurityTest.jsx'
 
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/quotations/new" element={<QuoteEditor />} />
           <Route path="/quotations/:id" element={<QuoteEditor />} />
           <Route path="/jobs" element={<Jobs />} />
+          <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/settings" element={<Settings />} />
           {/* Temporary developer page. Remove before launch. */}
           <Route path="/security-test" element={<SecurityTest />} />

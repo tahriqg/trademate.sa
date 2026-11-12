@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import OfflineBanner from './OfflineBanner.jsx'
 
 const links = [
   { to: '/', label: 'Dashboard', icon: '🏠' },
@@ -25,6 +26,7 @@ export default function Layout() {
         </nav>
       </aside>
       <main className="content">
+        <OfflineBanner />
         <Outlet />
       </main>
     </div>
